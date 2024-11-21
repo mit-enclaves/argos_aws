@@ -16,6 +16,8 @@ RUN ln -s /usr/bin/cmake3 /usr/bin/cmake
 
 # Clone specific SEAL repository and branch
 RUN git clone -b no_tyche https://github.com/jdrean/SEAL.git /SEAL && \
+    cd /SEAL && \
+    git checkout ${COMMIT_HASH} && \    
     ls -la /SEAL && \
     echo "SEAL directory contents:" && \
     ls -la /SEAL
@@ -31,12 +33,15 @@ RUN cmake3 -S . -B build -DSEAL_BUILD_EXAMPLES=ON -DSEAL_USE_INTRIN=ON -DSEAL_US
 # Start fresh with verified files
 FROM amazonlinux:2
 
-COPY --from=builder /SEAL/build/bin/sealexamples /sealexamples
+COPY --from=builder /SEAL/build/bin/sealexamples /usr/local/bin/sealexamples
 COPY --from=builder /usr/local/lib64/lib* /usr/local/lib64/
 COPY --from=builder /usr/lib64/libmkl* /usr/lib64/
 
-# Verify the binary exists
-RUN ls -la /sealexamples && \
-    ldd /sealexamples
+# Set library path
+ENV LD_LIBRARY_PATH=/usr/local/lib64:/usr/lib64
 
-ENTRYPOINT ["/sealexamples"]
+# Verify the binary exists
+RUN ls -la /usr/local/bin/sealexamples && \
+    ldd /usr/local/bin/sealexamples
+
+ENTRYPOINT ["/usr/local/bin/sealexamples"]
