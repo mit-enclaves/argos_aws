@@ -1,46 +1,14 @@
-FROM amazonlinux:2 AS builder
+FROM amazonlinux:2023
 
-# Install dependencies
-RUN yum update -y && yum install -y \
-    git \
-    cmake3 \
-    gcc-c++ \
-    make \
-    intel-mkl-2020.0-088 \
-    wget \
-    tar \
-    sudo
+# Create a directory for your binary
+WORKDIR /usr/local/bin
 
-# Create cmake symlink
-RUN ln -s /usr/bin/cmake3 /usr/bin/cmake
+# Copy your pre-built binary
+# Note: The sealexamples file should be in the same directory as your Dockerfile
+COPY sealexamples /usr/local/bin/sealexamples
+RUN chmod +x /usr/local/bin/sealexamples
 
-# Clone specific SEAL repository and branch
-RUN git clone -b no_tyche https://github.com/jdrean/SEAL.git /SEAL && \
-    cd /SEAL && \
-    git checkout ${COMMIT_HASH} && \    
-    ls -la /SEAL && \
-    echo "SEAL directory contents:" && \
-    ls -la /SEAL
-
-WORKDIR /SEAL
-RUN cmake3 -S . -B build -DSEAL_BUILD_EXAMPLES=ON -DSEAL_USE_INTRIN=ON -DSEAL_USE_INTEL_HEXL=ON && \
-    cmake3 --build build && \
-    cmake3 --install build && \
-    echo "Build directory contents:" && \
-    ls -la /SEAL/build/bin && \
-    test -f /SEAL/build/bin/sealexamples || (echo "sealexamples not found!" && exit 1)
-
-# Start fresh with verified files
-FROM amazonlinux:2
-
-COPY --from=builder /SEAL/build/bin/sealexamples /usr/local/bin/sealexamples
-COPY --from=builder /usr/local/lib64/lib* /usr/local/lib64/
-COPY --from=builder /usr/lib64/libmkl* /usr/lib64/
-
-# Set library path
-ENV LD_LIBRARY_PATH=/usr/local/lib64:/usr/lib64
-
-# Verify the binary exists
+# Verify the binary exists and check its dependencies
 RUN ls -la /usr/local/bin/sealexamples && \
     ldd /usr/local/bin/sealexamples
 

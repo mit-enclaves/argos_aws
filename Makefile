@@ -12,7 +12,7 @@ build_docker:
 
 # Build the enclave image from Docker image
 build_enclave: build_docker
-	nitro-cli build-enclave --build-arg COMMIT_HASH=$(git ls-remote https://github.com/jdrean/SEAL.git refs/heads/no_tyche | cut -f1) --docker-uri $(DOCKER_IMAGE):latest --output-file $(ENCLAVE_FILE)
+	nitro-cli build-enclave --docker-uri $(DOCKER_IMAGE):latest --output-file $(ENCLAVE_FILE)
 
 # Run the benchmark in Docker
 run_docker:
